@@ -1,0 +1,241 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <libusb-1.0/libusb.h>
+
+#define SERVER_IP "128.59.64.121"
+#define SERVER_PORT 42000
+#define BUFFER_SIZE 128
+
+// Global variables for communication between threads
+int sockfd;
+pthread_mutex_t mutex;
+
+// Thread function for networking
+void *network_thread_f(void *arg) {
+    char recvBuf[BUFFER_SIZE];
+    while (1) {
+        ssize_t bytes_received = recv(sockfd, recvBuf, BUFFER_SIZE - 1, 0);
+        if (bytes_received > 0) {
+            recvBuf[bytes_received] = '\0';
+            printf("Received from server: %s\n", recvBuf);
+        }
+    }
+    return NULL;
+}
+
+// Function to initialize libusb and find the USB keyboard
+void find_keyboard() {
+    libusb_device **devs;
+    libusb_device *dev;
+    libusb_context *ctx = NULL;
+    int r;
+
+    // Initialize libusb
+    r = libusb_init(&ctx);
+    if (r < 0) {
+        fprintf(stderr, "libusb_init error %d\n", r);
+        return;
+    }
+
+    // Enumerate USB devices
+    ssize_t cnt = libusb_get_device_list(ctx, &devs);
+    if (cnt < 0) {
+        fprintf(stderr, "libusb_get_device_list error\n");
+        libusb_exit(ctx);
+        return;
+    }
+
+    // Find the USB keyboard
+    for (ssize_t i = 0; i < cnt; i++) {
+        dev = devs[i];
+        struct libusb_device_descriptor desc;
+        libusb_get_device_descriptor(dev, &desc);
+        if (desc.bDeviceClass == LIBUSB_CLASS_HID && desc.bDeviceSubClass == 1) {
+            printf("Found USB keyboard\n");
+            // Connect to the keyboard and handle keystrokes
+            // This part needs to be implemented based on your requirements
+            break;
+        }
+    }
+
+    // Free device list
+    libusb_free_device_list(devs, 1);
+
+    // Exit libusb
+    libusb_exit(ctx);
+}
+
+int main() {
+    // Initialize mutex
+    pthread_mutex_init(&mutex, NULL);
+
+    // Create a socket
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Server address and port
+    struct sockaddr_in serv_addr;
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(SERVER_PORT);
+    serv_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
+
+    // Connect to the server
+    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("Connection failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Start the network thread
+    pthread_t network_thread;
+    if (pthread_create(&network_thread, NULL, network_thread_f, NULL) != 0) {
+        perror("Failed to create network thread");
+        exit(EXIT_FAILURE);
+    }
+
+    // Find and initialize the USB keyboard
+    find_keyboard();
+
+    // Main program logic
+    // This part of the code should handle USB keyboard input
+
+    // Wait for the network thread to terminate
+    pthread_join(network_thread, NULL);
+
+    // Cleanup
+    pthread_mutex_destroy(&mutex);
+    close(sockfd);
+
+    return EXIT_SUCCESS;
+}
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <libusb-1.0/libusb.h>
+
+#define SERVER_IP "128.59.64.121"
+#define SERVER_PORT 42000
+#define BUFFER_SIZE 128
+
+// Global variables for communication between threads
+int sockfd;
+pthread_mutex_t mutex;
+
+// Thread function for networking
+void *network_thread_f(void *arg) {
+    char recvBuf[BUFFER_SIZE];
+    while (1) {
+        ssize_t bytes_received = recv(sockfd, recvBuf, BUFFER_SIZE - 1, 0);
+        if (bytes_received > 0) {
+            recvBuf[bytes_received] = '\0';
+            printf("Received from server: %s\n", recvBuf);
+        }
+    }
+    return NULL;
+}
+
+// Function to initialize libusb and find the USB keyboard
+void find_keyboard() {
+    libusb_device **devs;
+    libusb_device *dev;
+    libusb_context *ctx = NULL;
+    int r;
+
+    // Initialize libusb
+    r = libusb_init(&ctx);
+    if (r < 0) {
+        fprintf(stderr, "libusb_init error %d\n", r);
+        return;
+    }
+
+    // Enumerate USB devices
+    ssize_t cnt = libusb_get_device_list(ctx, &devs);
+    if (cnt < 0) {
+        fprintf(stderr, "libusb_get_device_list error\n");
+        libusb_exit(ctx);
+        return;
+    }
+
+    // Find the USB keyboard
+    for (ssize_t i = 0; i < cnt; i++) {
+        dev = devs[i];
+        struct libusb_device_descriptor desc;
+        libusb_get_device_descriptor(dev, &desc);
+        if (desc.bDeviceClass == LIBUSB_CLASS_HID && desc.bDeviceSubClass == 1) {
+            printf("Found USB keyboard\n");
+            // Connect to the keyboard and handle keystrokes
+            // This part needs to be implemented based on your requirements
+            break;
+        }
+    }
+
+    // Free device list
+    libusb_free_device_list(devs, 1);
+
+    // Exit libusb
+    libusb_exit(ctx);
+}
+
+int main() {
+    // Initialize mutex
+    pthread_mutex_init(&mutex, NULL);
+
+    // Create a socket
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Server address and port
+    struct sockaddr_in serv_addr;
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(SERVER_PORT);
+    serv_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
+
+    // Connect to the server
+    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("Connection failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Start the network thread
+    pthread_t network_thread;
+    if (pthread_create(&network_thread, NULL, network_thread_f, NULL) != 0) {
+        perror("Failed to create network thread");
+        exit(EXIT_FAILURE);
+    }
+
+    // Find and initialize the USB keyboard
+    find_keyboard();
+
+    // Main program logic
+    // This part of the code should handle USB keyboard input
+
+    // Wait for the network thread to terminate
+    pthread_join(network_thread, NULL);
+
+    // Cleanup
+    pthread_mutex_destroy(&mutex);
+    close(sockfd);
+
+    return EXIT_SUCCESS;
+}
+
