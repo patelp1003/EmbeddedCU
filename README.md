@@ -1,3 +1,3 @@
 # Embedded Systems Design Labs and Project Work
-#Columbia University
-#Prathmesh Patel
+Columbia University
+Group: Prathmesh Patel, Rishit Thakkar, Tharun Kumar Jayaprakash
